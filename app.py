@@ -1,4 +1,4 @@
-import random, pydeck as pdk, streamlit as st
+import random, streamlit as st
 import streamlit.components.v1 as components
 
 import generate_map, optimize_route
