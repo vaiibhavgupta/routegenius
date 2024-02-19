@@ -1,5 +1,4 @@
 requests
-itertools
 numpy
 folium
 shapely
