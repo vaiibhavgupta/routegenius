@@ -24,7 +24,7 @@ def generate_hex_color():
 def main(path_coordinates, optimized):
 
     if optimized:
-        m = folium.Map(location=path_coordinates[0], zoom_start=12)
+        m = folium.Map(location=path_coordinates[0], zoom_start=10)
         offset_amount = 0.0001  # Small offset to apply to each route
 
         for i in range(len(path_coordinates) - 1):
@@ -39,7 +39,7 @@ def main(path_coordinates, optimized):
 
             m.save('optimized_route.html')
     else:
-        m = folium.Map(location=path_coordinates[0], zoom_start=12)
+        m = folium.Map(location=path_coordinates[0], zoom_start=10)
         for i in range(len(path_coordinates)):
             folium.Marker(path_coordinates[i], popup=i+1).add_to(m)
 

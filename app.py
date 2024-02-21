@@ -3,70 +3,86 @@ import streamlit.components.v1 as components
 
 import generate_map, optimize_route
 
-# Function to load map in streamlit app
 def load_html_file(path):
     with open(path, 'r', encoding='utf-8') as file:
         return file.read()
 
-# Function to add latitude and longitude input fields
-def add_lat_lon_input(key):
-    col1, col2 = st.columns(2)
-    with col1:
-        lat = st.number_input('Latitude', key=f'lat_{key}')
-    with col2:
-        lon = st.number_input('Longitude', key=f'lon_{key}')
-    return lat, lon
-
-st.session_state.original_path_coordinates = [
-    [36.131687, -86.668823], # BNA
-    [36.183021, -86.886495], # John C. Tune Airport
-    [36.206800, -86.690000], # Opry
-    [36.160485, -86.778630], # Apple Store
-    [36.144051, -86.800949], # Vanderbilt
-]
-
-# Streamlit application
-st.set_page_config(layout="wide")  # Use the full page width
+st.set_page_config(layout="wide")
 st.title('RouteGenius')
 
-# # Initialize the session state for count if it does not exist
-# if 'count' not in st.session_state:
-#     st.session_state.count = 1
+# Ensure the initial setup of the session state variables
+if 'original_path_coordinates' not in st.session_state:
+    st.session_state.original_path_coordinates = []
 
-# # Display the current input fields and add button
-# with st.form("lat_lon_form"):
-#     for n in range(st.session_state.count):
-#         new_lat, new_lon = add_lat_lon_input(n)
-#         st.session_state.original_path_coordinates.append([new_lat, new_lon])
-    
-#     # Button to add more input fields
-#     if st.form_submit_button("+ Add more"):
-#         st.session_state.count += 1
+if 'count' not in st.session_state:
+    st.session_state.count = 1
 
+# Function to add latitude and longitude input fields
+def add_lat_lon_input(key, default_lat=0.0, default_lon=0.0):
+    col1, col2 = st.columns(2)
+    with col1:
+        lat = st.number_input('Latitude', key=f'lat_{key}', value=default_lat)
+    with col2:
+        lon = st.number_input('Longitude', key=f'lon_{key}', value=default_lon)
+    return lat, lon
 
-generate_map.main(st.session_state.original_path_coordinates, False)
-st.session_state.optimized_path_coordinates = optimize_route.main(st.session_state.original_path_coordinates)
-generate_map.main(st.session_state.optimized_path_coordinates, True)
+# Dynamically create input fields based on count and prefill with existing values
+def display_input_fields():
+    for n in range(st.session_state.count):
+        default_lat, default_lon = (0.0, 0.0)
+        if n < len(st.session_state.original_path_coordinates):
+            default_lat, default_lon = st.session_state.original_path_coordinates[n]
+        lat, lon = add_lat_lon_input(n, default_lat, default_lon)
+        # Update the session state with the current input values
+        if lat == lon == 0:
+            continue
+        if n >= len(st.session_state.original_path_coordinates):
+            st.session_state.original_path_coordinates.append([lat, lon])
+        else:
+            st.session_state.original_path_coordinates[n] = [lat, lon]
 
+# Display the current input fields
+display_input_fields()
+
+# Button to add more input fields
+_, col_add = st.columns([0.9, 1])
+with col_add:
+    if st.button("+ Add more"):
+        st.session_state.count += 1
+        st.experimental_rerun()  # Force Streamlit to rerun the script
+
+if len(st.session_state.original_path_coordinates) != 0:
+    generate_map.main(st.session_state.original_path_coordinates, False)
+    st.session_state.optimized_path_coordinates = optimize_route.main(st.session_state.original_path_coordinates)
+    generate_map.main(st.session_state.optimized_path_coordinates, True)
 
 # Button to toggle optimization
-_, _, _, _, _, _, _, _, _, col = st.columns(10)
+_, col_opt = st.columns([11.9, 1])
 
-with col:
+with col_opt:
     show_optimized = st.button('Optimize Route')
 
-if show_optimized:
-    html_file_path = 'optimized_route.html'
-    html_content = load_html_file(html_file_path)
-    st.success('Optimized route calculated!')
+if len(st.session_state.original_path_coordinates) != 0:
+    if show_optimized:
+        html_file_path = 'optimized_route.html'
+        html_content = load_html_file(html_file_path)
+    else:
+        html_file_path = 'unoptimized_route.html'
+        html_content = load_html_file(html_file_path)
+
 else:
-    html_file_path = 'unoptimized_route.html'
-    html_content = load_html_file(html_file_path)
+    if show_optimized:
+        html_file_path = 'optimized_route_default.html'
+        html_content = load_html_file(html_file_path)
+        st.success('Optimized route calculated!')
+    else:
+        html_file_path = 'unoptimized_route_default.html'
+        html_content = load_html_file(html_file_path)
+
 
 # Display the Folium map in the Streamlit app
 components.html(html_content, height=600)
 st.write('Developed by RouteGenius')
-
 
 st.markdown('---')
 
